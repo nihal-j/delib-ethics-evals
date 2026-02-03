@@ -1,6 +1,4 @@
-# Learn This Repo: delib-ethics-evals (You Wrote This)
-
-A step-by-step guide so you own every part of this project and can explain it to anyone.
+# Repo Breakdown
 
 ---
 
