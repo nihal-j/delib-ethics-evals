@@ -1,6 +1,6 @@
 # Does Multi-Agent Deliberation Reduce Unethical Behavior in Goal-Driven Environments?
 
-A short report for the delib-ethics-eval framework (SPAR-style evaluation).
+A short report for the delib-ethics-eval framework.
 
 ## Motivation
 

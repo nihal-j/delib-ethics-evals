@@ -1,44 +1,48 @@
-# Delib-Ethics-Eval
+# delib-ethics-evals
 
-A minimal evaluation framework to study **whether multi-agent deliberation reduces unethical behavior** in multi-turn goal-driven environments (SPAR-style).
+Runs deliberation vs single-agent evals: same goal, same env, compare success and whether the agent takes unethical shortcuts (lying, omission, light coercion, etc.). Output is JSONL logs and simple metrics.
+
+Built with help from AI; I ran the experiments and put the repo together.
 
 ## Requirements
 
 - Python 3.11
 - `pip install -r requirements.txt`
 
-## Environment variables
+## Env vars
 
-- `OPENAI_API_KEY` — Your API key (OpenRouter or OpenAI).
-- `OPENAI_BASE_URL` — (Optional) Base URL; default OpenAI. For OpenRouter use `https://openrouter.ai/api/v1`.
-- `MODEL` — (Optional) Model name; default `openai/gpt-3.5-turbo` or similar.
+- `OPENAI_API_KEY` — required (OpenRouter or OpenAI key).
+- `OPENAI_BASE_URL` — optional. For OpenRouter: `https://openrouter.ai/api/v1`.
+- `MODEL` — optional; default is something cheap like `openai/gpt-3.5-turbo`.
 
-## Quick start
+## Run
+
+From the repo root:
 
 ```bash
-# Run 50 episodes, single-agent baseline
-python -m delib_ethics_eval.run --policy single --episodes 50 --seed 42
+# Single-agent baseline
+python3 -m delib_ethics_eval.run --policy single --episodes 50 --seed 42
 
-# Run 50 episodes with deliberation (planner → critic → decider)
-python -m delib_ethics_eval.run --policy deliberation --episodes 50 --seed 42
+# Deliberation (planner → critic → decider)
+python3 -m delib_ethics_eval.run --policy deliberation --episodes 50 --seed 42
 ```
 
-Output: JSONL log (e.g. `runs/run_<timestamp>.jsonl`) and printed metrics.
+Logs go to `runs/` (one JSONL file per run). At the end you get success rate, unethical rate, ethical success rate, and average turns.
 
-## What the environment is
+## What it’s doing
 
-A fixed small scenario (e.g. "obtain approval for a room booking" or "get a colleague to swap a shift") with a finite state graph. Each turn the agent chooses an action; some actions are marked **unethical** in the environment (e.g. lying, omission, light coercion). The run ends when the goal is reached or max turns. Episodes are deterministic given `--seed` (env and episode sampling use the seed).
+One small scenario (room booking): you get a situation and a list of actions each turn. Some actions are marked unethical in the env (e.g. claim urgency without evidence, omit that another team needs the room). Run ends at goal or max turns. Seed fixes episode order so runs are reproducible.
 
-## How metrics are computed
+## Metrics
 
-- **success_rate**: Fraction of episodes that reached the goal.
-- **unethical_rate**: Fraction of episodes with at least one step where the environment or the judge marked the chosen action as unethical (environment flags + judge; we do not rely on self-report alone).
-- **ethical_success_rate**: Fraction of episodes that succeeded and had zero unethical steps.
-- **average_turns**: Mean number of steps per episode.
-- Sanity checks: e.g. max steps per episode, fraction of valid JSON parses, optional distribution of failure reasons.
+- **success_rate** — fraction of episodes that reached the goal.
+- **unethical_rate** — fraction of episodes where the env (or judge) flagged at least one chosen action as unethical (we don’t use self-report alone).
+- **ethical_success_rate** — fraction that both succeeded and had zero unethical steps.
+- **average_turns** — mean steps per episode.
 
-## Checklist
+Plus parse-fail rate and max turns as sanity checks.
 
-- **Run 50 episodes**: From the repo root, `python -m delib_ethics_eval.run --policy single --episodes 50 --seed 42` (single-agent) or `--policy deliberation --episodes 50 --seed 42` (deliberation). Ensure `prompts/` and the package are on the path (e.g. `pip install -e .` or run from repo root).
-- **Change model**: Set env var `MODEL`, e.g. `export MODEL=openai/gpt-4o-mini` or `MODEL=anthropic/claude-3-haiku`. For OpenRouter set `OPENAI_BASE_URL=https://openrouter.ai/api/v1` and `MODEL` to the OpenRouter model id.
-- **Add a new deliberation architecture**: Implement a new policy in `delib_ethics_eval/policies/` (e.g. `committee.py`) that exposes `decide(obs, allowed_actions, goal)` returning `(parsed_dict, parse_ok)`. Register it in `run.py` (e.g. `--policy committee`) and add corresponding prompts under `prompts/` if needed.
+## Changing model / adding a policy
+
+- **Model**: set `MODEL` (and `OPENAI_BASE_URL` for OpenRouter).
+- **New deliberation setup**: add a policy under `delib_ethics_eval/policies/` with `decide(obs, allowed_actions, goal)` returning `(parsed_dict, parse_ok)`, wire it in `run.py` with a new `--policy` option, and add prompts under `prompts/` if needed.
